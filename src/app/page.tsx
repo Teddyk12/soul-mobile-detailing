@@ -5,30 +5,25 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { loadContent, type WebsiteContent } from '@/lib/content';
+import { loadContentFromSupabase, type WebsiteContent } from '@/lib/content';
 import { Sparkles, Shield, Clock, Phone, MapPin, ClockIcon, Check, Menu, X } from 'lucide-react';
 import { BookingForm } from '@/components/BookingForm';
 
 export default function Home() {
-  const [content, setContent] = useState<WebsiteContent>(() => {
-    if (typeof window !== 'undefined') {
-      return loadContent();
-    }
-    // Return a minimal default for server-side rendering
-    return {
-      siteName: "Soul Mobile Detailing LLC",
-      hero: { backgroundImage: "", heading: "", subheading: "" },
-      features: [],
-      services: [],
-      about: { heading: "", paragraph1: "", paragraph2: "", stat1Label: "", stat1Value: "", stat2Label: "", stat2Value: "", image: "" },
-      contact: { phone: "", email: "", hours: { weekday: "", saturday: "", sunday: "" } }
-    };
+  const [content, setContent] = useState<WebsiteContent>({
+    siteName: "Soul Mobile Detailing LLC",
+    hero: { backgroundImage: "", heading: "", subheading: "" },
+    features: [],
+    services: [],
+    about: { heading: "", paragraph1: "", paragraph2: "", stat1Label: "", stat1Value: "", stat2Label: "", stat2Value: "", image: "" },
+    contact: { phone: "", email: "", hours: { weekday: "", saturday: "", sunday: "" } }
   });
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    setContent(loadContent());
+    // Load content from Supabase on mount
+    loadContentFromSupabase().then(setContent);
   }, []);
 
   const iconMap = {
