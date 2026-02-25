@@ -1,0 +1,14 @@
+{
+  "buildCommand": "bun run build",
+  "framework": "nextjs",
+  "regions": ["sfo1"],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "",
+    "RESEND_API_KEY": ""
+  },
+  "buildSettings": {
+    "disableTypescriptChecking": true,
+    "disableEslintChecking": true
+  }
+}
