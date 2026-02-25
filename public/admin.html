@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soul Mobile Detailing - Admin Panel</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #111827;
+      color: white;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .admin-login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .admin-login {
+      background-color: #1e293b;
+      padding: 24px;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 400px;
+      border: 1px solid #334155;
+    }
+    .admin-dashboard {
+      display: none;
+    }
+    h1 {
+      font-size: 24px;
+      margin: 0 0 16px 0;
+      text-align: center;
+    }
+    h2 {
+      font-size: 20px;
+      margin: 0 0 16px 0;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+    }
+    input {
+      width: 100%;
+      padding: 8px 12px;
+      background-color: #0f172a;
+      color: white;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .error-message {
+      color: #ef4444;
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: none;
+    }
+    .button {
+      width: 100%;
+      padding: 8px 16px;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+    .button.secondary {
+      background-color: transparent;
+      border: 1px solid #334155;
+    }
+    .button.danger {
+      background-color: #ef4444;
+    }
+    .button-row {
+      display: flex;
+      gap: 8px;
+    }
+    .button-row .button {
+      margin-bottom: 0;
+    }
+    .card {
+      background-color: #1e293b;
+      padding: 24px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      border: 1px solid #334155;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .left-buttons {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .right-buttons {
+      display: flex;
+      gap: 12px;
+    }
+    .debug-info {
+      background-color: #0f172a;
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: monospace;
+    }
+    .debug-info p {
+      margin: 4px 0;
+    }
+    .my-account {
+      display: none;
+    }
+    .credential-hint {
+      font-size: 14px;
+      color: #9CA3AF;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .info-box {
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    .info-box.success {
+      background-color: #022c22;
+      color: #6ee7b7;
+    }
+    .info-box.error {
+      background-color: #450a0a;
+      color: #fca5a5;
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-login-container">
+    <!-- Login Form -->
+    <div class="admin-login" id="loginForm">
+      <h1>Admin Login</h1>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" required>
+      </div>
+      <div class="error-message" id="errorMsg"></div>
+      <button class="button" id="loginButton">Login</button>
+      <div class="credential-hint">
+        Owner Login: username: owner / password: soul2025
+      </div>
+      <div class="button-row">
+        <button class="button secondary" id="resetButton">Reset</button>
+        <a href="/" style="flex: 1; text-decoration: none;">
+          <button class="button secondary" style="width: 100%">Back</button>
+        </a>
+      </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div class="container admin-dashboard" id="adminDashboard">
+      <div class="header">
+        <div class="left-buttons">
+          <a href="/" style="text-decoration: none;">
+            <button class="button secondary">Back to Site</button>
+          </a>
+          <h1>Admin Panel</h1>
+        </div>
+        <div class="right-buttons">
+          <button class="button secondary" id="myAccountButton">My Account</button>
+          <button class="button danger" id="logoutButton">Logout</button>
+        </div>
+      </div>
+
+      <!-- My Account Section -->
+      <div class="card my-account" id="myAccountSection">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2>My Account</h2>
+          <button class="button secondary" id="closeAccountButton" style="width: auto; padding: 4px 8px; font-size: 14px;">Close</button>
+        </div>
+
+        <div class="info-box success" id="accountSuccessMsg" style="display: none;"></div>
+        <div class="info-box error" id="accountErrorMsg" style="display: none;"></div>
+
+        <div class="form-group">
+          <label for="newUsername">Username</label>
+          <input type="text" id="newUsername" required>
+        </div>
+
+        <div class="form-group">
+          <label for="newFullName">Full Name</label>
+          <input type="text" id="newFullName">
+        </div>
+
+        <div class="form-group">
+          <label for="currentPassword">Current Password (required to change password)</label>
+          <input type="password" id="currentPassword">
+        </div>
+
+        <div class="form-group">
+          <label for="newPassword">New Password (leave blank to keep current)</label>
+          <input type="password" id="newPassword">
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirm New Password</label>
+          <input type="password" id="confirmPassword">
+        </div>
+
+        <button class="button" id="updateAccountButton">Update Account</button>
+      </div>
+
+      <div class="card">
+        <h2 id="welcomeHeading">Welcome</h2>
+        <p id="userInfo">You are logged in</p>
+        <div style="background-color: #374151; padding: 24px; border-radius: 8px; margin-top: 16px;">
+          <h3 style="margin-top: 0;">Admin Dashboard</h3>
+          <p>This is the admin control panel for your website.</p>
+          <p>Use the My Account button in the header to manage your account settings.</p>
+          <div style="margin-top: 24px;">
+            <a href="/" style="text-decoration: none;">
+              <button class="button">Return to Website</button>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="margin: 0;">Debug Information</h3>
+          <button class="button secondary" id="clearSessionButton" style="width: auto; padding: 4px 8px; font-size: 14px;">Clear Session & Refresh</button>
+        </div>
+        <div class="debug-info">
+          <p id="userId">User ID: unknown</p>
+          <p id="usernameInfo">Username: unknown</p>
+          <p id="fullNameInfo">Full Name: unknown</p>
+          <p id="roleInfo">Role: unknown</p>
+          <p id="environmentInfo">Environment: production</p>
+          <p id="sessionTime">Session active: N/A</p>
+          <p>Using standalone HTML admin page (v4.0 - Direct File)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize admin panel
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('[ADMIN] Standalone page loaded');
+
+      // Check if user is logged in
+      try {
+        const storedUser = window.sessionStorage.getItem('currentUser');
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          console.log('[ADMIN] Found user:', user.username);
+          showAdminDashboard(user);
+        } else {
+          console.log('[ADMIN] No user found');
+          showLoginForm();
+        }
+      } catch (error) {
+        console.error('[ADMIN] Error checking authentication:', error);
+        showLoginForm();
+      }
+
+      // Login button click
+      document.getElementById('loginButton').addEventListener('click', function() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        console.log('[ADMIN] Login attempt:', username);
+
+        if (username === 'owner' && password === 'soul2025') {
+          const user = {
+            id: 'admin-1',
+            username: 'owner',
+            fullName: 'Business Owner',
+            role: 'owner',
+            lastLogin: new Date().toISOString()
+          };
+
+          try {
+            window.sessionStorage.setItem('currentUser', JSON.stringify(user));
+            showAdminDashboard(user);
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            console.log('[ADMIN] Login successful');
+          } catch (error) {
+            console.error('[ADMIN] Error saving user to storage:', error);
+            // Still show dashboard even if storage fails
+            showAdminDashboard(user);
+          }
+        } else {
+          const errorMsg = document.getElementById('errorMsg');
+          errorMsg.textContent = 'Invalid username or password';
+          errorMsg.style.display = 'block';
+          document.getElementById('password').value = '';
+          console.log('[ADMIN] Login failed');
+        }
+      });
+
+      // Reset button click
+      document.getElementById('resetButton').addEventListener('click', function() {
+        console.log('[ADMIN] Resetting session');
+        try {
+          window.sessionStorage.clear();
+        } catch (error) {
+          console.error('[ADMIN] Error clearing session:', error);
+        }
+        window.location.reload();
+      });
+
+      // Logout button click
+      document.getElementById('logoutButton').addEventListener('click', function() {
+        console.log('[ADMIN] Logging out');
+        try {
+          window.sessionStorage.removeItem('currentUser');
+        } catch (error) {
+          console.error('[ADMIN] Error removing user from session:', error);
+        }
+        showLoginForm();
+      });
+
+      // Clear session button click
+      document.getElementById('clearSessionButton').addEventListener('click', function() {
+        console.log('[ADMIN] Clearing session and refreshing');
+        try {
+          window.sessionStorage.clear();
+        } catch (error) {
+          console.error('[ADMIN] Error clearing session:', error);
+        }
+        window.location.reload();
+      });
+
+      // My Account button click
+      document.getElementById('myAccountButton').addEventListener('click', function() {
+        const myAccountSection = document.getElementById('myAccountSection');
+        if (myAccountSection.style.display === 'block') {
+          myAccountSection.style.display = 'none';
+          this.style.backgroundColor = 'transparent';
+        } else {
+          myAccountSection.style.display = 'block';
+          this.style.backgroundColor = '#4b5563';
+
+          // Fill in existing data
+          try {
+            const storedUser = window.sessionStorage.getItem('currentUser');
+            if (storedUser) {
+              const user = JSON.parse(storedUser);
+              document.getElementById('newUsername').value = user.username || '';
+              document.getElementById('newFullName').value = user.fullName || '';
+            }
+          } catch (error) {
+            console.error('[ADMIN] Error getting user data:', error);
+          }
+        }
+      });
+
+      // Close Account button click
+      document.getElementById('closeAccountButton').addEventListener('click', function() {
+        document.getElementById('myAccountSection').style.display = 'none';
+        document.getElementById('myAccountButton').style.backgroundColor = 'transparent';
+      });
+
+      // Update Account button click
+      document.getElementById('updateAccountButton').addEventListener('click', function() {
+        console.log('[ADMIN] Updating account');
+        const newUsername = document.getElementById('newUsername').value;
+        const newFullName = document.getElementById('newFullName').value;
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        const successMsg = document.getElementById('accountSuccessMsg');
+        const errorMsg = document.getElementById('accountErrorMsg');
+
+        successMsg.style.display = 'none';
+        errorMsg.style.display = 'none';
+
+        // Validate inputs
+        if (newPassword !== confirmPassword) {
+          errorMsg.textContent = 'New passwords do not match';
+          errorMsg.style.display = 'block';
+          return;
+        }
+
+        if (currentPassword && currentPassword !== 'soul2025') {
+          errorMsg.textContent = 'Current password is incorrect';
+          errorMsg.style.display = 'block';
+          return;
+        }
+
+        if (!newUsername.trim()) {
+          errorMsg.textContent = 'Username cannot be empty';
+          errorMsg.style.display = 'block';
+          return;
+        }
+
+        try {
+          // Get current user
+          const storedUser = window.sessionStorage.getItem('currentUser');
+          if (!storedUser) {
+            errorMsg.textContent = 'No user data found. Please login again.';
+            errorMsg.style.display = 'block';
+            return;
+          }
+
+          const user = JSON.parse(storedUser);
+
+          // Create updated user object
+          const updatedUser = {
+            ...user,
+            username: newUsername,
+            fullName: newFullName,
+            lastLogin: user.lastLogin || new Date().toISOString()
+          };
+
+          // Update password if provided
+          if (newPassword) {
+            console.log('[ADMIN] Password would be updated in a real app');
+            if (newUsername === 'owner') {
+              console.log('[ADMIN] Password updated for owner - in a real system this would update the database');
+            }
+          }
+
+          // Save to session storage
+          window.sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+          // Update displayed information
+          document.getElementById('welcomeHeading').textContent = 'Welcome, ' + (updatedUser.fullName || 'Admin User');
+          document.getElementById('userInfo').textContent = 'You are logged in as ' +
+            (updatedUser.username || 'admin') + ' (' + (updatedUser.role || 'admin') + ')';
+          document.getElementById('usernameInfo').textContent = 'Username: ' + (updatedUser.username || 'unknown');
+          document.getElementById('fullNameInfo').textContent = 'Full Name: ' + (updatedUser.fullName || 'unknown');
+
+          // Clear password fields
+          document.getElementById('currentPassword').value = '';
+          document.getElementById('newPassword').value = '';
+          document.getElementById('confirmPassword').value = '';
+
+          // Show success message
+          successMsg.textContent = 'Account information updated successfully';
+          successMsg.style.display = 'block';
+
+          // Clear success message after 3 seconds
+          setTimeout(function() {
+            successMsg.style.display = 'none';
+          }, 3000);
+
+        } catch (error) {
+          console.error('[ADMIN] Error updating account:', error);
+          errorMsg.textContent = 'Error saving changes. Please try again.';
+          errorMsg.style.display = 'block';
+        }
+      });
+
+      // Handle Enter key press for login
+      document.getElementById('password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          document.getElementById('loginButton').click();
+        }
+      });
+    });
+
+    // Show login form
+    function showLoginForm() {
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('adminDashboard').style.display = 'none';
+      document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    // Show admin dashboard
+    function showAdminDashboard(user) {
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('adminDashboard').style.display = 'block';
+      document.getElementById('myAccountSection').style.display = 'none';
+
+      // Update user information
+      document.getElementById('welcomeHeading').textContent = 'Welcome, ' + (user.fullName || 'Admin User');
+      document.getElementById('userInfo').textContent = 'You are logged in as ' +
+        (user.username || 'admin') + ' (' + (user.role || 'admin') + ')';
+      document.getElementById('userId').textContent = 'User ID: ' + (user.id || 'unknown');
+      document.getElementById('usernameInfo').textContent = 'Username: ' + (user.username || 'unknown');
+      document.getElementById('fullNameInfo').textContent = 'Full Name: ' + (user.fullName || 'unknown');
+      document.getElementById('roleInfo').textContent = 'Role: ' + (user.role || 'unknown');
+      document.getElementById('sessionTime').textContent = 'Session active: ' + new Date().toISOString();
+    }
+  </script>
+</body>
+</html>
