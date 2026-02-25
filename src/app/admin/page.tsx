@@ -948,10 +948,9 @@ export default function AdminPage() {
               <p>Username: {currentUser?.username || 'unknown'}</p>
               <p>Full Name: {currentUser?.fullName || 'unknown'}</p>
               <p>Role: {currentUser?.role || 'unknown'}</p>
-              <p>Environment: {process.env.NODE_ENV || 'development'}</p>
-              <p>Client: {clientInfo.userAgent ? clientInfo.userAgent.substring(0, 90) + '...' : 'unknown'}</p>
-              <p>Storage: {clientInfo.storageAvailable ? 'Available' : 'Unavailable'}</p>
-              <p>Using Next.js admin panel implementation (React)</p>
+              <p>Environment: {process.env.NODE_ENV || 'production'}</p>
+              <p>Session active: {new Date().toISOString()}</p>
+              <p>Using Next.js integrated admin panel implementation</p>
             </div>
           </CardContent>
         </Card>
