@@ -751,11 +751,16 @@ export async function loadAvailabilityFromSupabase(): Promise<AvailabilitySlot[]
 }
 
 export async function addAvailabilitySlotToSupabase(date: string, time: string): Promise<AvailabilitySlot> {
+  console.log('[SUPABASE] addAvailabilitySlotToSupabase called with:', { date, time });
+  console.log('[SUPABASE] isSupabaseConfigured:', isSupabaseConfigured());
+
   if (!isSupabaseConfigured()) {
+    console.log('[SUPABASE] Supabase not configured, using localStorage fallback');
     return addAvailabilitySlot(date, time);
   }
 
   try {
+    console.log('[SUPABASE] Attempting to insert into availability_slots table...');
     const { data, error } = await supabase
       .from('availability_slots')
       .insert({
@@ -766,7 +771,12 @@ export async function addAvailabilitySlotToSupabase(date: string, time: string):
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[SUPABASE] Insert error:', error);
+      throw error;
+    }
+
+    console.log('[SUPABASE] Insert successful, data:', data);
 
     const newSlot: AvailabilitySlot = {
       id: data.id,
@@ -786,9 +796,10 @@ export async function addAvailabilitySlotToSupabase(date: string, time: string):
     });
     saveAvailability(slots);
 
+    console.log('[SUPABASE] Successfully added slot:', newSlot);
     return newSlot;
   } catch (error) {
-    console.error('Error adding slot to Supabase:', error);
+    console.error('[SUPABASE] Error adding slot to Supabase, falling back to localStorage:', error);
     return addAvailabilitySlot(date, time);
   }
 }

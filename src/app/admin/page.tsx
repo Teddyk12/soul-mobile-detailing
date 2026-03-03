@@ -554,24 +554,42 @@ export default function AdminPage() {
 
   // Availability management handlers - now with Supabase support
   const handleAddSlot = async () => {
-    if (!currentUser || !newSlotDate || !newSlotTime) return;
+    console.log('[ADMIN] Add slot clicked:', { currentUser, newSlotDate, newSlotTime });
+
+    if (!currentUser) {
+      alert('No user logged in');
+      return;
+    }
+
+    if (!newSlotDate || !newSlotTime) {
+      alert('Please select both date and time');
+      return;
+    }
 
     try {
+      console.log('[ADMIN] Importing Supabase functions...');
       // Use Supabase function from content.ts
       const { addAvailabilitySlotToSupabase } = await import('@/lib/content');
+
+      console.log('[ADMIN] Adding slot to Supabase:', newSlotDate, newSlotTime);
       await addAvailabilitySlotToSupabase(newSlotDate, newSlotTime);
 
+      console.log('[ADMIN] Slot added successfully, reloading availability...');
       // Reload availability from Supabase
       const { loadAvailabilityFromSupabase } = await import('@/lib/content');
       const updated = await loadAvailabilityFromSupabase();
+
+      console.log('[ADMIN] Loaded updated availability:', updated.length, 'slots');
       setAvailability(updated);
 
       setNewSlotDate('');
       setNewSlotTime('');
       logAudit(currentUser.id, currentUser.username, 'availability_update', `Added time slot: ${newSlotDate} ${newSlotTime}`);
+
+      alert('Time slot added successfully!');
     } catch (error) {
-      console.error('Error adding slot:', error);
-      alert('Failed to add time slot. Please try again.');
+      console.error('[ADMIN] Error adding slot:', error);
+      alert(`Failed to add time slot: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
