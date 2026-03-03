@@ -15,7 +15,8 @@ import {
 import {
   login, logout, getCurrentUser, getAdminUsers, addAdminUser, updateAdminUser, deleteAdminUser,
   getAuditLogs, logAudit, generatePasswordResetCode, applyPasswordResetCode,
-  getUserByUsername, changePassword, changeUsername, verifyPassword,
+  getUserByUsername, changePassword, changeUsername, verifyPassword, getRecoveryOptions,
+  resetPasswordWithSecurityAnswer,
   type AdminUser, type AuditLog
 } from '@/lib/auth';
 import { getContent, saveContent, type WebsiteContent } from '@/lib/content';
@@ -257,88 +258,6 @@ export default function AdminPage() {
     }
   };
 
-  // Helper for security question & reset code flow
-  function getUserByUsername(username: string): AdminUser | null {
-    if (username === 'owner') {
-      // Ensure the role is one of the allowed values
-      const user = getAdminUsers()[0];
-      return {
-        ...user,
-        role: user.role === 'owner' || user.role === 'admin' || user.role === 'staff' ? user.role : 'staff'
-      };
-    }
-    return null;
-  }
-
-  // Get recovery options for a user
-  function getRecoveryOptions(username: string) {
-    // This would typically check a database
-    // For demo purposes, we're hardcoding for the owner account
-    if (username === 'owner') {
-      return {
-        hasEmail: true,
-        hasSecurityQuestion: true,
-        securityQuestion: 'What is the name of your first pet?'
-      };
-    }
-    return {
-      hasEmail: false,
-      hasSecurityQuestion: false
-    };
-  }
-
-  // Generate a password reset code
-  function generatePasswordResetCode(username: string): string {
-    // In a real app, this would store the code in a database
-    // For now, just generate a 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-    try {
-      // Store the code in sessionStorage for this demo
-      // In production, this would be in a database with expiration
-      sessionStorage.setItem(`resetCode_${username}`, code);
-    } catch (error) {
-      console.error('Failed to save reset code:', error);
-    }
-
-    return code;
-  }
-
-  // Verify a password reset code
-  function verifyResetCode(username: string, code: string): boolean {
-    try {
-      const storedCode = sessionStorage.getItem(`resetCode_${username}`);
-      return storedCode === code;
-    } catch (error) {
-      console.error('Error verifying reset code:', error);
-      return false;
-    }
-  }
-
-  // Verify security answer
-  function verifySecurityAnswer(username: string, answer: string): boolean {
-    // For demo, the answer is "Buddy" for the owner account
-    if (username === 'owner') {
-      return answer.toLowerCase() === 'buddy';
-    }
-    return false;
-  }
-
-  // Reset password function
-  function resetPassword(username: string, newPassword: string): boolean {
-    // In a real app, this would update the password in the database
-    console.log(`Password for ${username} would be reset to: ${newPassword}`);
-
-    try {
-      // Clean up the reset code
-      sessionStorage.removeItem(`resetCode_${username}`);
-    } catch (error) {
-      console.error('Error cleaning up reset code:', error);
-    }
-
-    return true;
-  }
-
   // Handle sending reset code
   const handleSendResetCode = async () => {
     setForgotPasswordError('');
@@ -354,7 +273,7 @@ export default function AdminPage() {
       return;
     }
 
-    // Check recovery options
+    // Check recovery options using imported function
     const recoveryOptions = getRecoveryOptions(forgotUsername);
     console.log('Recovery options for user:', forgotUsername, recoveryOptions);
 
@@ -376,7 +295,7 @@ export default function AdminPage() {
     setUserEmailForReset(user.email);
 
     try {
-      // Generate the reset code
+      // Generate the reset code using imported function
       const code = generatePasswordResetCode(forgotUsername);
       console.log('Generated reset code for', forgotUsername);
 
@@ -435,10 +354,17 @@ export default function AdminPage() {
       return;
     }
 
-    if (verifyResetCode(forgotUsername, resetCode)) {
-      setForgotPasswordStep('new-password');
-    } else {
-      setForgotPasswordError('Invalid reset code. Please try again.');
+    // Just verify the code exists in sessionStorage
+    try {
+      const storedCode = sessionStorage.getItem(`resetCode_${forgotUsername}`);
+      if (storedCode === resetCode) {
+        setForgotPasswordStep('new-password');
+      } else {
+        setForgotPasswordError('Invalid reset code. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error verifying reset code:', error);
+      setForgotPasswordError('Error verifying reset code. Please try again.');
     }
   };
 
@@ -451,7 +377,9 @@ export default function AdminPage() {
       return;
     }
 
-    if (verifySecurityAnswer(forgotUsername, securityAnswer)) {
+    // Just verify the answer to proceed to password reset
+    const user = getUserByUsername(forgotUsername);
+    if (user && user.securityAnswer && user.securityAnswer.toLowerCase() === securityAnswer.toLowerCase().trim()) {
       setForgotPasswordStep('new-password');
     } else {
       setForgotPasswordError('Incorrect answer. Please try again.');
@@ -472,17 +400,31 @@ export default function AdminPage() {
       return;
     }
 
-    if (newResetPassword.length < 8) {
-      setForgotPasswordError('Password must be at least 8 characters');
+    if (newResetPassword.length < 6) {
+      setForgotPasswordError('Password must be at least 6 characters');
       return;
     }
 
-    if (resetPassword(forgotUsername, newResetPassword)) {
+    try {
+      // If we have a reset code, use applyPasswordResetCode
+      if (resetCode) {
+        applyPasswordResetCode(resetCode, newResetPassword);
+      } else if (securityAnswer) {
+        // If we used security answer, use resetPasswordWithSecurityAnswer
+        resetPasswordWithSecurityAnswer(forgotUsername, securityAnswer, newResetPassword);
+      }
+
       setShowForgotPassword(false);
-      setLoginError(''); // Clear any previous login errors
-      setLoginError('Password reset successfully. Please log in with your new password.');
-    } else {
-      setForgotPasswordError('Failed to reset password. Please try again.');
+      setForgotPasswordStep('username');
+      setForgotUsername('');
+      setResetCode('');
+      setSecurityAnswer('');
+      setNewResetPassword('');
+      setConfirmResetPassword('');
+      setLoginError('Password reset successfully! Please log in with your new password.');
+    } catch (error) {
+      console.error('Password reset error:', error);
+      setForgotPasswordError(error instanceof Error ? error.message : 'Failed to reset password. Please try again.');
     }
   };
 
