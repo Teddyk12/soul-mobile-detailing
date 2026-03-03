@@ -1772,11 +1772,21 @@ export default function AdminPage() {
                     availability
                       .sort((a, b) => new Date(a.date + ' ' + a.time).getTime() - new Date(b.date + ' ' + b.time).getTime())
                       .map(slot => {
-                        const slotDate = new Date(slot.date);
+                        // Fix timezone issue - parse date string as local time, not UTC
+                        const [year, month, day] = slot.date.split('-').map(Number);
+                        const slotDate = new Date(year, month - 1, day); // month is 0-indexed
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
                         const isPast = slotDate < today;
                         const isAvailable = !slot.isBooked;
+
+                        // Format date properly in local timezone
+                        const formattedDate = slotDate.toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+
+                        });
 
                         return (
                           <div
@@ -1797,7 +1807,7 @@ export default function AdminPage() {
                               </div>
                               <div>
                                 <p className="text-white font-medium">
-                                  {new Date(slot.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                  {formattedDate}
                                   {' at '}
                                   {slot.time}
                                 </p>

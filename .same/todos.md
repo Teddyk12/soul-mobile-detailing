@@ -19,70 +19,64 @@
 - **Backup recovery options** - Security question/answer for owner account
 - **Session fully restored** - Latest code from GitHub with all features working
 - **🎉 COMPLETE ADMIN PANEL REBUILT** - All management features fully functional!
-- **✅ Pushed to GitHub** - Commit 3585cd2 with all enhancements
+- **✅ Pushed to GitHub** - Multiple commits with enhancements
 - **✅ Auto-deploying to Vercel** - Via GitHub integration
 - **✨ Customer History Tracking** - Shows previous bookings and total spent
 - **📝 Admin Notes System** - Internal annotations for bookings
 - **🔍 Enhanced Booking Details** - Expandable view with full customer history
 - **🐛 WEBPACK MODULE ERROR FIXED** - Removed duplicate function definitions
-- **✅ Pushed fix to GitHub** - Commit dddd444
-- **🚨 CRITICAL: AVAILABILITY MANAGEMENT FIXED** - Time slots now save to Supabase cloud
-- **✅ All handlers updated to use Supabase** - Add/delete/update now syncs across devices
-- **✅ Pushed to GitHub** - Commit a1c1df4
+- **🚨 DELETE SLOTS WORKING** - Can remove time slots successfully
+- **🔍 DEBUGGING ADD SLOTS** - Added comprehensive logging
 
-## 📋 Current Status - System Fully Operational ✨
-- ✅ **Full admin panel with 5 management tabs**
-- ✅ **Website Content** - Edit all homepage content (saves to Supabase)
-- ✅ **Bookings** - Enhanced with customer history and admin notes (Supabase)
-- ✅ **Availability** - Add/delete time slots (NOW SAVING TO SUPABASE ✨)
-- ✅ **Admin Users** - User management with roles
-- ✅ **Audit Logs** - Track all admin actions
-- ✅ **Customer History** - Automatic tracking of repeat customers
-- ✅ **Admin Notes** - Add internal notes to any booking
-- ✅ **Repeat Customer Badges** - Visual indicators for returning clients
-- ✅ **Total Spend Tracking** - Shows lifetime value of each customer
-- ✅ **Module Error Fixed** - Admin panel now working without webpack errors
-- ✅ **Availability Cloud Sync** - All time slots sync across devices via Supabase
-- ✅ Code pushed to GitHub (4 commits today)
-- ✅ Vercel auto-deployment in progress
+## 📋 Current Status - Diagnosing Add Slot Issue 🔍
+- ✅ **Delete slots** - WORKING
+- ⚠️ **Add slots** - NOT WORKING (debugging in progress)
+- 🔍 **Detailed logging added** - To identify the root cause
+- ✅ Code pushed to GitHub (5 commits today)
+- ✅ Vercel auto-deployment in progress (ETA: 1-2 minutes)
 - 🌐 Live production site: https://soulmobiledetailingllc.com
-- 📧 Resend email configured for booking notifications
-- 🔒 Multi-user admin system active with improved security
-- ☁️ Supabase Storage bucket created for image uploads
 
-## 🎯 Recent Fix - Availability Management (CRITICAL)
-**Problem:** User reported time slots not saving - couldn't add or remove slots
+## 🔍 Current Issue - Add Slot Not Working
+**Problem:** User can delete slots but cannot add new slots
 
-**Root Cause:**
-- Availability handlers were using localStorage-only functions
-- Changes weren't syncing to Supabase cloud database
-- Type mismatch: code used 'available' but Supabase uses 'isBooked'
+**Debugging Steps Added:**
+1. ✅ Added extensive console logging to track execution flow
+2. ✅ Added Supabase configuration checks and logging
+3. ✅ Enhanced error messages with specific details
+4. ✅ Added validation alerts for missing data
+5. ✅ Added success confirmation when slot is added
 
-**Solution:**
-✅ **All availability handlers updated to async/await with Supabase:**
-- `handleAddSlot` → uses `addAvailabilitySlotToSupabase`
-- `handleDeleteSlot` → uses `deleteAvailabilitySlotFromSupabase`
-- Quick Add presets (7 days, 30 days, weekends) → all use Supabase
-- Bulk delete buttons → use Supabase batch operations
-- `loadAllData` → loads from `loadAvailabilityFromSupabase`
+**What to Check Next:**
+1. Open browser Developer Console (F12)
+2. Go to admin panel → Availability tab
+3. Try to add a slot
+4. Check console for detailed logs showing:
+   - Supabase configuration status
+   - Insert operation details
+   - Any error messages
+   - Success/failure confirmation
 
-✅ **Content & bookings also updated:**
-- `handleSaveContent` → uses `saveContentToSupabase`
-- `handleUpdateBookingStatus` → uses `updateBookingStatusInSupabase`
-- `handleDeleteBooking` → uses `deleteBookingFromSupabase`
-
-✅ **Type fixes applied:**
-- Changed all `slot.available` to `!slot.isBooked`
-- Updated statistics dashboard property names
-- Fixed slot list rendering to use correct types
-
-**Result:** Time slots now properly save to cloud and sync across all devices! ✅
+**Possible Causes:**
+- Supabase environment variables not set in Vercel
+- Database table `availability_slots` doesn't exist
+- RLS (Row Level Security) policies blocking inserts
+- Column name mismatch in database schema
 
 ## 🚀 Deployment Status
 - GitHub Repository: https://github.com/Teddyk12/soul-mobile-detailing
-- Latest Commit: a1c1df4 "Fix availability management to use Supabase cloud database"
+- Latest Commit: 6f6c148 "Add detailed logging for debugging add slot issue"
 - Vercel Status: Auto-deploying from main branch (ETA: 1-2 minutes)
-- Production URL: https://soulmobiledetailingllc.com (updating with critical fix)
+- Production URL: https://soulmobiledetailingllc.com
+
+## 📝 Next Steps
+1. Wait for Vercel deployment to complete (1-2 minutes)
+2. Try adding a slot again
+3. Open browser console (F12 → Console tab)
+4. Share the console log messages to identify the issue
+5. Likely need to check:
+   - Vercel environment variables (NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY)
+   - Supabase database schema
+   - RLS policies on availability_slots table
 
 ## 💡 Possible Future Enhancements
 - Export booking history to CSV/Excel
