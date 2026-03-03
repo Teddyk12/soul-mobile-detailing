@@ -449,25 +449,28 @@ export default function AdminPage() {
     }
   }, [isAuthenticated, currentUser, activeTab]);
 
-  const loadAllData = () => {
+  const loadAllData = async () => {
     try {
-      // Load content
-      const loadedContent = getContent();
+      // Load content from Supabase
+      const { loadContentFromSupabase } = await import('@/lib/content');
+      const loadedContent = await loadContentFromSupabase();
       setContent(loadedContent);
 
-      // Load bookings
-      const loadedBookings = getBookings();
+      // Load bookings from Supabase
+      const { loadBookingsFromSupabase } = await import('@/lib/content');
+      const loadedBookings = await loadBookingsFromSupabase();
       setBookings(loadedBookings);
 
-      // Load availability
-      const loadedAvailability = getAvailability();
+      // Load availability from Supabase
+      const { loadAvailabilityFromSupabase } = await import('@/lib/content');
+      const loadedAvailability = await loadAvailabilityFromSupabase();
       setAvailability(loadedAvailability);
 
-      // Load users
+      // Load users (still from localStorage)
       const loadedUsers = getAdminUsers();
       setUsers(loadedUsers);
 
-      // Load audit logs
+      // Load audit logs (still from localStorage)
       const loadedLogs = getAuditLogs();
       setAuditLogs(loadedLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
     } catch (error) {
@@ -476,45 +479,63 @@ export default function AdminPage() {
   };
 
   // Content management handlers
-  const handleSaveContent = () => {
+  const handleSaveContent = async () => {
     if (!content || !currentUser) return;
 
     try {
-      saveContent(content);
+      // Save to Supabase
+      const { saveContentToSupabase } = await import('@/lib/content');
+      await saveContentToSupabase(content);
+
       setContentSuccess('Content updated successfully!');
       setEditingContent(false);
       logAudit(currentUser.id, currentUser.username, 'content_update', 'Updated website content');
       setTimeout(() => setContentSuccess(''), 3000);
     } catch (error) {
+      console.error('Error saving content:', error);
       setContentError('Failed to save content. Please try again.');
       setTimeout(() => setContentError(''), 3000);
     }
   };
 
   // Booking management handlers
-  const handleUpdateBookingStatus = (bookingId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled') => {
+  const handleUpdateBookingStatus = async (bookingId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled') => {
     if (!currentUser) return;
 
     try {
-      updateBooking(bookingId, { status });
-      setBookings(getBookings());
+      // Update in Supabase
+      const { updateBookingStatusInSupabase, loadBookingsFromSupabase } = await import('@/lib/content');
+      await updateBookingStatusInSupabase(bookingId, status);
+
+      // Reload bookings
+      const updated = await loadBookingsFromSupabase();
+      setBookings(updated);
+
       logAudit(currentUser.id, currentUser.username, 'booking_update', `Updated booking ${bookingId} status to ${status}`);
     } catch (error) {
       console.error('Error updating booking:', error);
+      alert('Failed to update booking. Please try again.');
     }
   };
 
-  const handleDeleteBooking = (bookingId: string) => {
+  const handleDeleteBooking = async (bookingId: string) => {
     if (!currentUser || !confirm('Are you sure you want to delete this booking?')) return;
 
     try {
-      deleteBooking(bookingId);
-      setBookings(getBookings());
+      // Delete from Supabase
+      const { deleteBookingFromSupabase, loadBookingsFromSupabase } = await import('@/lib/content');
+      await deleteBookingFromSupabase(bookingId);
+
+      // Reload bookings
+      const updated = await loadBookingsFromSupabase();
+      setBookings(updated);
+
       setSelectedBooking(null);
       setShowBookingDetails(null);
       logAudit(currentUser.id, currentUser.username, 'booking_update', `Deleted booking ${bookingId}`);
     } catch (error) {
       console.error('Error deleting booking:', error);
+      alert('Failed to delete booking. Please try again.');
     }
   };
 
@@ -531,37 +552,46 @@ export default function AdminPage() {
     }
   };
 
-  // Availability management handlers
-  const handleAddSlot = () => {
+  // Availability management handlers - now with Supabase support
+  const handleAddSlot = async () => {
     if (!currentUser || !newSlotDate || !newSlotTime) return;
 
     try {
-      const newSlot: TimeSlot = {
-        id: `slot-${Date.now()}`,
-        date: newSlotDate,
-        time: newSlotTime,
-        available: true,
-        bookingId: null
-      };
-      addAvailability(newSlot);
-      setAvailability(getAvailability());
+      // Use Supabase function from content.ts
+      const { addAvailabilitySlotToSupabase } = await import('@/lib/content');
+      await addAvailabilitySlotToSupabase(newSlotDate, newSlotTime);
+
+      // Reload availability from Supabase
+      const { loadAvailabilityFromSupabase } = await import('@/lib/content');
+      const updated = await loadAvailabilityFromSupabase();
+      setAvailability(updated);
+
       setNewSlotDate('');
       setNewSlotTime('');
       logAudit(currentUser.id, currentUser.username, 'availability_update', `Added time slot: ${newSlotDate} ${newSlotTime}`);
     } catch (error) {
       console.error('Error adding slot:', error);
+      alert('Failed to add time slot. Please try again.');
     }
   };
 
-  const handleDeleteSlot = (slotId: string) => {
+  const handleDeleteSlot = async (slotId: string) => {
     if (!currentUser || !confirm('Are you sure you want to delete this time slot?')) return;
 
     try {
-      deleteAvailability(slotId);
-      setAvailability(getAvailability());
+      // Use Supabase function from content.ts
+      const { deleteAvailabilitySlotFromSupabase } = await import('@/lib/content');
+      await deleteAvailabilitySlotFromSupabase(slotId);
+
+      // Reload availability from Supabase
+      const { loadAvailabilityFromSupabase } = await import('@/lib/content');
+      const updated = await loadAvailabilityFromSupabase();
+      setAvailability(updated);
+
       logAudit(currentUser.id, currentUser.username, 'availability_update', `Deleted time slot ${slotId}`);
     } catch (error) {
       console.error('Error deleting slot:', error);
+      alert('Failed to delete time slot. Please try again.');
     }
   };
 
@@ -1467,7 +1497,7 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <p className="text-sm text-gray-300">Available</p>
-                      <p className="text-2xl font-bold text-white">{availability.filter(s => s.available).length}</p>
+                      <p className="text-2xl font-bold text-white">{availability.filter(s => !s.isBooked).length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1481,7 +1511,7 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <p className="text-sm text-gray-300">Booked</p>
-                      <p className="text-2xl font-bold text-white">{availability.filter(s => !s.available).length}</p>
+                      <p className="text-2xl font-bold text-white">{availability.filter(s => s.isBooked).length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1500,7 +1530,7 @@ export default function AdminPage() {
                           const slotDate = new Date(s.date);
                           const today = new Date();
                           const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-                          return slotDate >= today && slotDate <= weekFromNow && s.available;
+                          return slotDate >= today && slotDate <= weekFromNow && !s.isBooked;
                         }).length}
                       </p>
                     </div>
@@ -1520,26 +1550,25 @@ export default function AdminPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Button
-                    onClick={() => {
-                      const today = new Date();
-                      const times = ['09:00', '11:00', '13:00', '15:00'];
-                      for (let i = 0; i < 7; i++) {
-                        const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
-                        const dateStr = date.toISOString().split('T')[0];
-                        times.forEach(time => {
-                          const newSlot: any = {
-                            id: `slot-${Date.now()}-${Math.random()}`,
-                            date: dateStr,
-                            time,
-                            available: true,
-                            bookingId: null
-                          };
-                          addAvailability(newSlot);
-                        });
-                      }
-                      setAvailability(getAvailability());
-                      if (currentUser) {
+                    onClick={async () => {
+                      if (!currentUser) return;
+                      try {
+                        const { addAvailabilitySlotToSupabase, loadAvailabilityFromSupabase } = await import('@/lib/content');
+                        const today = new Date();
+                        const times = ['09:00', '11:00', '13:00', '15:00'];
+                        for (let i = 0; i < 7; i++) {
+                          const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
+                          const dateStr = date.toISOString().split('T')[0];
+                          for (const time of times) {
+                            await addAvailabilitySlotToSupabase(dateStr, time);
+                          }
+                        }
+                        const updated = await loadAvailabilityFromSupabase();
+                        setAvailability(updated);
                         logAudit(currentUser.id, currentUser.username, 'availability_update', 'Quick added: Next 7 days (4 slots/day)');
+                      } catch (error) {
+                        console.error('Error adding slots:', error);
+                        alert('Failed to add time slots. Please try again.');
                       }
                     }}
                     className="h-auto py-4 flex-col gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
@@ -1550,28 +1579,27 @@ export default function AdminPage() {
                   </Button>
 
                   <Button
-                    onClick={() => {
-                      const today = new Date();
-                      const times = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30'];
-                      for (let i = 0; i < 30; i++) {
-                        const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
-                        if (date.getDay() !== 0) { // Skip Sundays
-                          const dateStr = date.toISOString().split('T')[0];
-                          times.forEach(time => {
-                            const newSlot: any = {
-                              id: `slot-${Date.now()}-${Math.random()}`,
-                              date: dateStr,
-                              time,
-                              available: true,
-                              bookingId: null
-                            };
-                            addAvailability(newSlot);
-                          });
+                    onClick={async () => {
+                      if (!currentUser) return;
+                      try {
+                        const { addAvailabilitySlotToSupabase, loadAvailabilityFromSupabase } = await import('@/lib/content');
+                        const today = new Date();
+                        const times = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30'];
+                        for (let i = 0; i < 30; i++) {
+                          const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
+                          if (date.getDay() !== 0) { // Skip Sundays
+                            const dateStr = date.toISOString().split('T')[0];
+                            for (const time of times) {
+                              await addAvailabilitySlotToSupabase(dateStr, time);
+                            }
+                          }
                         }
-                      }
-                      setAvailability(getAvailability());
-                      if (currentUser) {
+                        const updated = await loadAvailabilityFromSupabase();
+                        setAvailability(updated);
                         logAudit(currentUser.id, currentUser.username, 'availability_update', 'Quick added: Next 30 days (6 slots/day, Mon-Sat)');
+                      } catch (error) {
+                        console.error('Error adding slots:', error);
+                        alert('Failed to add time slots. Please try again.');
                       }
                     }}
                     className="h-auto py-4 flex-col gap-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600"
@@ -1582,29 +1610,27 @@ export default function AdminPage() {
                   </Button>
 
                   <Button
-                    onClick={() => {
-                      const today = new Date();
-                      // Only add weekends (Saturday and Sunday)
-                      const times = ['10:00', '12:00', '14:00', '16:00'];
-                      for (let i = 0; i < 30; i++) {
-                        const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
-                        if (date.getDay() === 0 || date.getDay() === 6) { // Saturday or Sunday
-                          const dateStr = date.toISOString().split('T')[0];
-                          times.forEach(time => {
-                            const newSlot: any = {
-                              id: `slot-${Date.now()}-${Math.random()}`,
-                              date: dateStr,
-                              time,
-                              available: true,
-                              bookingId: null
-                            };
-                            addAvailability(newSlot);
-                          });
+                    onClick={async () => {
+                      if (!currentUser) return;
+                      try {
+                        const { addAvailabilitySlotToSupabase, loadAvailabilityFromSupabase } = await import('@/lib/content');
+                        const today = new Date();
+                        const times = ['10:00', '12:00', '14:00', '16:00'];
+                        for (let i = 0; i < 30; i++) {
+                          const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
+                          if (date.getDay() === 0 || date.getDay() === 6) { // Saturday or Sunday
+                            const dateStr = date.toISOString().split('T')[0];
+                            for (const time of times) {
+                              await addAvailabilitySlotToSupabase(dateStr, time);
+                            }
+                          }
                         }
-                      }
-                      setAvailability(getAvailability());
-                      if (currentUser) {
+                        const updated = await loadAvailabilityFromSupabase();
+                        setAvailability(updated);
                         logAudit(currentUser.id, currentUser.username, 'availability_update', 'Quick added: Weekends only (4 slots/day)');
+                      } catch (error) {
+                        console.error('Error adding slots:', error);
+                        alert('Failed to add time slots. Please try again.');
                       }
                     }}
                     className="h-auto py-4 flex-col gap-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600"
@@ -1621,15 +1647,22 @@ export default function AdminPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        if (!confirm('Delete all past time slots?')) return;
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        const pastSlots = availability.filter(s => new Date(s.date) < today && s.available);
-                        pastSlots.forEach(slot => deleteAvailability(slot.id));
-                        setAvailability(getAvailability());
-                        if (currentUser) {
+                      onClick={async () => {
+                        if (!currentUser || !confirm('Delete all past time slots?')) return;
+                        try {
+                          const { deleteAvailabilitySlotFromSupabase, loadAvailabilityFromSupabase } = await import('@/lib/content');
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const pastSlots = availability.filter(s => new Date(s.date) < today && s.isBooked === false);
+                          for (const slot of pastSlots) {
+                            await deleteAvailabilitySlotFromSupabase(slot.id);
+                          }
+                          const updated = await loadAvailabilityFromSupabase();
+                          setAvailability(updated);
                           logAudit(currentUser.id, currentUser.username, 'availability_update', `Deleted ${pastSlots.length} past slots`);
+                        } catch (error) {
+                          console.error('Error deleting past slots:', error);
+                          alert('Failed to delete past slots. Please try again.');
                         }
                       }}
                       className="bg-gray-800 text-white border-gray-600 hover:bg-gray-700"
@@ -1641,12 +1674,20 @@ export default function AdminPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        if (!confirm('Delete ALL available time slots? This cannot be undone!')) return;
-                        availability.filter(s => s.available).forEach(slot => deleteAvailability(slot.id));
-                        setAvailability(getAvailability());
-                        if (currentUser) {
+                      onClick={async () => {
+                        if (!currentUser || !confirm('Delete ALL available time slots? This cannot be undone!')) return;
+                        try {
+                          const { deleteAvailabilitySlotFromSupabase, loadAvailabilityFromSupabase } = await import('@/lib/content');
+                          const availableSlots = availability.filter(s => s.isBooked === false);
+                          for (const slot of availableSlots) {
+                            await deleteAvailabilitySlotFromSupabase(slot.id);
+                          }
+                          const updated = await loadAvailabilityFromSupabase();
+                          setAvailability(updated);
                           logAudit(currentUser.id, currentUser.username, 'availability_update', 'Deleted all available slots');
+                        } catch (error) {
+                          console.error('Error deleting all slots:', error);
+                          alert('Failed to delete slots. Please try again.');
                         }
                       }}
                       className="bg-red-900 text-red-200 border-red-700 hover:bg-red-800"
@@ -1699,7 +1740,7 @@ export default function AdminPage() {
             {/* Time Slots List */}
             <Card className="bg-gray-800 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-white">Available Time Slots ({availability.filter(s => s.available).length} available)</CardTitle>
+                <CardTitle className="text-white">Available Time Slots ({availability.filter(s => !s.isBooked).length} available)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -1717,12 +1758,13 @@ export default function AdminPage() {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
                         const isPast = slotDate < today;
+                        const isAvailable = !slot.isBooked;
 
                         return (
                           <div
                             key={slot.id}
                             className={`p-3 rounded-lg flex justify-between items-center border transition-all ${
-                              slot.available
+                              isAvailable
                                 ? isPast
                                   ? 'bg-gray-900/50 border-gray-700 opacity-50'
                                   : 'bg-gray-900 border-green-900/50 hover:border-green-700'
@@ -1731,9 +1773,9 @@ export default function AdminPage() {
                           >
                             <div className="flex items-center gap-3">
                               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                                slot.available ? 'bg-green-600' : 'bg-blue-600'
+                                isAvailable ? 'bg-green-600' : 'bg-blue-600'
                               }`}>
-                                {slot.available ? <Check className="w-5 h-5 text-white" /> : <X className="w-5 h-5 text-white" />}
+                                {isAvailable ? <Check className="w-5 h-5 text-white" /> : <X className="w-5 h-5 text-white" />}
                               </div>
                               <div>
                                 <p className="text-white font-medium">
@@ -1742,11 +1784,11 @@ export default function AdminPage() {
                                   {slot.time}
                                 </p>
                                 <p className="text-sm text-gray-400">
-                                  {slot.available ? (isPast ? '⚠️ Past date - should be removed' : '✅ Available for booking') : '🔒 Slot is booked'}
+                                  {isAvailable ? (isPast ? '⚠️ Past date - should be removed' : '✅ Available for booking') : '🔒 Slot is booked'}
                                 </p>
                               </div>
                             </div>
-                            {slot.available && (
+                            {isAvailable && (
                               <Button
                                 size="sm"
                                 variant="destructive"
